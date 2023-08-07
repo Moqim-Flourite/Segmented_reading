@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>自动拆分英文句子</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 150px;
+      }
+      .sentence {
+        margin-bottom: 10px;
+      }
+      .translation {
+        font-style: italic;
+        color: #666;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>自动拆分英文句子</h1>
+    <p>请输入英文段落：</p>
+    <textarea id="inputText" placeholder="在这里输入英文段落"></textarea>
+    <button onclick="processText()">拆分句子</button>
+    <div id="output"></div>
+    <script src="http://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="./md5.js"></script>
+
+    <script>
+      function processText() {
+        const inputText = document.getElementById("inputText").value;
+        const sentences = inputText
+          .split(/[.!?]/)
+          .filter((sentence) => sentence.trim() !== "");
+
+        let outputHTML = "";
+
+        sentences.forEach((sentence, index) => {
+          const sentenceIndex = index + 1;
+
+          outputHTML += `
+            <div class="sentence">
+              <span>句子 ${sentenceIndex}:</span>
+              <span class="sentence-text">${sentence.trim()}</span>
+              <br>
+              <button onclick="translateSentence('${sentence.trim()}', ${sentenceIndex})">翻译</button>
+              <button onclick="speakSentence('${sentence.trim()}')">朗读</button>
+              <div class="translation" id="translation-${sentenceIndex}"></div>
+            </div>
+          `;
+        });
+
+        document.getElementById("output").innerHTML = outputHTML;
+      }
+
+      function translateSentence(sentence, sentenceIndex) {
+        // Replace YOUR_BAIDU_API_KEY with your actual Baidu Translation API key
+        const key = "";
+        const appid = "";
+        const salt = new Date().getTime();
+
+        // Construct the request parameters
+        const query = sentence;
+        const from = "en";
+        const to = "zh";
+        const str1 = appid + query + salt + key;
+        const sign = MD5(str1);
+
+        // Send the request
+        $.ajax({
+          url: "http://api.fanyi.baidu.com/api/trans/vip/translate",
+          type: "get",
+          dataType: "jsonp",
+          data: {
+            q: query,
+            appid: appid,
+            salt: salt,
+            from: from,
+            to: to,
+            sign: sign,
+          },
+          success: function (data) {
+            const translation = data.trans_result[0].dst;
+            $(`#translation-${sentenceIndex}`).text(translation);
+          },
+        });
+      }
+
+      function speakSentence(sentence) {
+        const utterance = new SpeechSynthesisUtterance(sentence);
+        speechSynthesis.speak(utterance);
+      }
+    </script>
+  </body>
+</html>
